@@ -20,7 +20,7 @@ module Lhm
       @throttle = options[:throttle] || 100
       @start = options[:start] || select_start
       @limit = options[:limit] || select_limit
-      @legacy_mode = options[:legacy_mode] || false
+      @batch_mode = options[:batch_mode] || false
     end
 
     # Copies chunks of size `stride`, starting from `start` up to id `limit`.
@@ -94,10 +94,10 @@ module Lhm
 
     def execute
       up_to do |lowest, highest|
-        affected_rows = if @legacy_mode
-          @connection.update(copy(lowest, highest))
-        else
+        affected_rows = if @batch_mode
           @connection.update(copy_batchwise(lowest, @stride))
+        else
+          @connection.update(copy(lowest, highest))
         end
         
 
