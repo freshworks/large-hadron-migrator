@@ -101,12 +101,13 @@ module Lhm
       while records.any?
         records_size = @connection.update(copy_batchwise(select_query(start_value)))
         break if records_size.zero?
-        start_value = @connection.select_last(select_query(start_value))["#{origin_primary_key}"]
+        start_value = @connection.select_last(select_query(start_value, origin_primary_key))["#{origin_primary_key}"]
       end
     end
 
-    def select_query(offset)
-      "select #{ columns } from `#{ origin_name }` where `#{origin_primary_key}` > #{offset} order by #{origin_primary_key} asc limit #{@stride}"
+    def select_query(offset, columns_to_be_selected = nil)
+      columns_to_be_selected ||= columns
+      "select #{ columns_to_be_selected } from `#{ origin_name }` where `#{origin_primary_key}` > #{offset} order by #{origin_primary_key} asc limit #{@stride}"
     end
 
     def execute_legacy_mode
