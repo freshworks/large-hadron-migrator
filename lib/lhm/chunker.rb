@@ -48,10 +48,9 @@ module Lhm
       "where `#{ origin_primary_key }` between #{ lowest } and #{ highest }"
     end
 
-    def copy_batchwise(offset, row_limit)
-      "insert ignore into `#{ destination_name }` (#{ columns }) " +
-      "select #{ columns } from `#{ origin_name }` " +
-      "where `#{origin_primary_key}` >= #{offset} order by #{origin_primary_key} asc limit #{row_limit}"
+    def copy_batchwise(select_clause)
+      "insert ignore into `#{ destination_name }` (#{ columns }) " + 
+      "#{select_clause}"
     end
 
     def select_start
@@ -93,13 +92,26 @@ module Lhm
     end
 
     def execute
+      @batch_mode ? execute_batch_mode : execute_legacy_mode
+    end
+
+    def execute_batch_mode
+      start_value = @start - 1
+      records = @connection.select_all(select_query(start_value))
+      while records.any?
+        records_size = @connection.update(copy_batchwise(select_query(start_value)))
+        break if records_size.zero?
+        start_value = @connection.select_last(select_query(start_value))["#{origin_primary_key}"]
+      end
+    end
+
+    def select_query(offset)
+      "select #{ columns } from `#{ origin_name }` where `#{origin_primary_key}` > #{offset} order by #{origin_primary_key} asc limit #{@stride}"
+    end
+
+    def execute_legacy_mode
       up_to do |lowest, highest|
-        affected_rows = if @batch_mode
-          @connection.update(copy_batchwise(lowest, @stride))
-        else
-          @connection.update(copy(lowest, highest))
-        end
-        
+        affected_rows = @connection.update(copy(lowest, highest))
 
         if affected_rows > 0
           sleep(throttle_seconds)
