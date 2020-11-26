@@ -92,25 +92,10 @@ module Lhm
     end
 
     def execute
-      @batch_mode ? execute_batch_mode : execute_legacy_mode
+      @batch_mode ? execute_batch_mode : execute_incremental_mode
     end
 
-    def execute_batch_mode
-      start_value = @start - 1
-      records = @connection.select_all(select_query(start_value))
-      while records.any?
-        records_size = @connection.update(copy_batchwise(select_query(start_value)))
-        break if records_size.zero?
-        start_value = @connection.select_last(select_query(start_value, origin_primary_key))["#{origin_primary_key}"]
-      end
-    end
-
-    def select_query(offset, columns_to_be_selected = nil)
-      columns_to_be_selected ||= columns
-      "select #{ columns_to_be_selected } from `#{ origin_name }` where `#{origin_primary_key}` > #{offset} order by #{origin_primary_key} asc limit #{@stride}"
-    end
-
-    def execute_legacy_mode
+    def execute_incremental_mode
       up_to do |lowest, highest|
         affected_rows = @connection.update(copy(lowest, highest))
 
@@ -121,6 +106,40 @@ module Lhm
         print "."
       end
       print "\n"
+    end
+
+    def execute_batch_mode
+      start_value = @start - 1
+      loop do
+        # Getting last id first in order to handle deletes
+        # Assume, continuous ids from 1 to 20 with stride 10, and ids 5, 6 are deleted after copying first batch 1 to 10
+        #   If we fetch last id after copying, start_value will become 12, and records 11, 12 will not be copied
+        #   If we fetch last id before copying, start_value will be 10
+        # In case of any INSERTs between the ids in first batch,
+        #   start_value will not be the latest id, but because of INSERT IGNORE clause while copying
+        #   it will be safely ignored
+        next_primary_key = @connection.select_last(select_query(start_value, origin_primary_key)).to_h["#{origin_primary_key}"]
+        affected_rows = @connection.update(copy_batchwise(select_query(start_value)))
+
+        if affected_rows > 0
+          sleep(throttle_seconds)
+        elsif next_primary_key.nil? || next_primary_key >= @limit
+          break
+        end
+
+        start_value = next_primary_key
+        print '.'
+      end
+      print "\n"
+    rescue => e
+      debugger # TODO Remove this
+    end
+
+    def select_query(offset, columns_to_be_selected = nil)
+      columns_to_be_selected ||= columns
+      "select #{ columns_to_be_selected } from `#{ origin_name }` " +
+        "where `#{origin_primary_key}` > #{offset} " +
+        "order by #{origin_primary_key} asc limit #{@stride}"
     end
   end
 end
