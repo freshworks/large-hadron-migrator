@@ -67,6 +67,14 @@ module Lhm
       @throttle / 1000.0
     end
 
+    def select_query(offset, columns_to_be_selected = nil)
+      columns_to_be_selected ||= columns
+      "select #{ columns_to_be_selected } from `#{ origin_name }` " +
+        "where `#{origin_primary_key}` > #{offset} " +
+        "and `#{origin_primary_key}` <= #{@limit} " +
+        "order by #{origin_primary_key} asc limit #{@stride}"
+    end
+
   private
 
     def destination_name
@@ -133,13 +141,6 @@ module Lhm
       print "\n"
     rescue => e
       debugger # TODO Remove this
-    end
-
-    def select_query(offset, columns_to_be_selected = nil)
-      columns_to_be_selected ||= columns
-      "select #{ columns_to_be_selected } from `#{ origin_name }` " +
-        "where `#{origin_primary_key}` > #{offset} " +
-        "order by #{origin_primary_key} asc limit #{@stride}"
     end
   end
 end

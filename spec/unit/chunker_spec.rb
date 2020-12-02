@@ -39,10 +39,11 @@ describe Lhm::Chunker do
     end
 
     it "should copy the correct range and column" do
-      @chunker.copy_batchwise(from = 1, batch = 100).must_equal(
+      @chunker.copy_batchwise(@chunker.select_query(from = 1)).must_equal(
         "insert ignore into `destination` (`secret`) " +
         "select `secret` from `origin` " +
-        "where `id` >= #{from} order by id asc limit #{batch}"
+        "where `id` > #{from} and `id` <= 10 " +
+        "order by id asc limit 40000"
       )
     end
   end

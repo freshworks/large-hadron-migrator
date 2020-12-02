@@ -40,7 +40,7 @@ describe Lhm::Chunker do
     it "should copy 100 rows from batch_origin to batch_destination" do
       100.times { |n| execute("insert into batch_origin set id = '#{ n * n + 100 }'") }
 
-      Lhm::Chunker.new(@batch_migration, connection, { :stride => 50, :batch_mode => true }).run
+      Lhm::Chunker.new(@batch_migration, connection, { :stride => 40, :batch_mode => true }).run
 
       slave do
         count_all(@batch_destination.name).must_equal(100)
