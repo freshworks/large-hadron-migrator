@@ -20,7 +20,7 @@ module Lhm
       @throttle = options[:throttle] || 100
       @start = options[:start] || select_start
       @limit = options[:limit] || select_limit
-      @batch_mode = options[:batch_mode] || false
+      @batch_mode = options.fetch(:batch_mode, false)
     end
 
     # Copies chunks of size `stride`, starting from `start` up to id `limit`.
@@ -126,16 +126,16 @@ module Lhm
         # In case of any INSERTs between the ids in first batch,
         #   start_value will not be the latest id, but because of INSERT IGNORE clause while copying
         #   it will be safely ignored
-        next_primary_key = @connection.select_last(select_query(start_value, origin_primary_key)).to_h["#{origin_primary_key}"]
+        next_primary_key_value = @connection.select_last(select_query(start_value, origin_primary_key)).to_h["#{origin_primary_key}"]
         affected_rows = @connection.update(copy_batchwise(select_query(start_value)))
 
         if affected_rows > 0
           sleep(throttle_seconds)
-        elsif next_primary_key.nil? || next_primary_key >= @limit
+        elsif next_primary_key_value.nil? || next_primary_key_value >= @limit
           break
         end
 
-        start_value = next_primary_key
+        start_value = next_primary_key_value
         print '.'
       end
       print "\n"
