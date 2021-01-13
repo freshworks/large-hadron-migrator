@@ -34,6 +34,7 @@ module Lhm
   # @return [Boolean] Returns true if the migration finishes
   # @raise [Error] Raises Lhm::Error in case of a error and aborts the migration
   def self.change_table(table_name, options = {}, &block)
+    Lhm.cleanup(true, table_name: table_name) if options[:cleanup]
     connection = Connection.new(adapter)
 
     origin = Table.parse(table_name, connection)
@@ -56,6 +57,15 @@ module Lhm
     lhm_triggers = connection.select_values("show triggers").collect do |trigger|
       trigger.respond_to?(:trigger) ? trigger.trigger : trigger
     end.select { |name| name =~ /^lhmt/ }
+
+    if options[:table_name]
+      table_name = "_#{options[:table_name]}"
+      lhm_tables.select! do |table|
+        stripped_table_name = table.starts_with?("lhma") ? table.slice(28..-1) : table.slice(4..-1)
+        stripped_table_name == table_name
+      end
+      lhm_triggers = []
+    end
 
     if run
       lhm_triggers.each do |trigger|
