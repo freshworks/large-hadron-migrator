@@ -18,6 +18,10 @@ require 'lhm/version'
 #
 module Lhm
 
+  LHMA_SPLIT_REGEX = /lhma_[\d_]{24}/
+  LHMN_SPLIT_REGEX = /lhmn_/
+  LHMT_SPLIT_REGEX = /lhmt_(ins|upd|del)_/
+
   # Alters a table with the changes described in the block
   #
   # @param [String, Symbol] table_name Name of the table
@@ -34,7 +38,7 @@ module Lhm
   # @return [Boolean] Returns true if the migration finishes
   # @raise [Error] Raises Lhm::Error in case of a error and aborts the migration
   def self.change_table(table_name, options = {}, &block)
-    Lhm.cleanup(true, table_name: table_name) if options[:cleanup]
+    Lhm.cleanup(true, table_name: table_name) if options.fetch(:cleanup, false)
     connection = Connection.new(adapter)
 
     origin = Table.parse(table_name, connection)
@@ -59,12 +63,14 @@ module Lhm
     end.select { |name| name =~ /^lhmt/ }
 
     if options[:table_name]
-      table_name = "_#{options[:table_name]}"
+      table_name = options[:table_name]
       lhm_tables.select! do |table|
-        stripped_table_name = table.starts_with?("lhma") ? table.slice(28..-1) : table.slice(4..-1)
+        stripped_table_name = table.starts_with?("lhma") ? table.split(LHMA_SPLIT_REGEX).last : table.split(LHMN_SPLIT_REGEX).last
         stripped_table_name == table_name
       end
-      lhm_triggers = []
+      lhm_triggers.select! do |trigger|
+        trigger.split(LHMT_SPLIT_REGEX).last == table_name
+      end
     end
 
     if run
