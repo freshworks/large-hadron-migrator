@@ -2,5 +2,4 @@ source :rubygems
 
 gem "mysql2", "~> 0.3.11"
 gem "activerecord", "~> 3.2.2"
-#gem "byebug"
 gemspec :path=>"../"

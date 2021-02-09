@@ -1,6 +1,6 @@
 Steps to open console
 
-Run `BUNDLE_GEMFILE=gemfiles/ar-3.2_mysql2.gemfile bundle exec rake console`
+Run `BUNDLE_GEMFILE=gemfiles/ar-3.2_mysql2.gemfile bundle exec rake console`.
 Inside console, 
 ```
 require 'active_record'

@@ -18,7 +18,7 @@ require 'lhm/version'
 #
 module Lhm
 
-  LHMA_SPLIT_REGEX = /lhma_[\d_]{24}/
+  LHMA_SPLIT_REGEX = /lhma_(\d{2,4}_){7}/
   LHMN_SPLIT_REGEX = /lhmn_/
   LHMT_SPLIT_REGEX = /lhmt_(ins|upd|del)_/
 
