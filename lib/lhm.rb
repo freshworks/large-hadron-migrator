@@ -47,10 +47,13 @@ module Lhm
     invoker.run(options)
 
     true
+  ensure
+    Lhm.cleanup(true, table_name: table_name, only_triggers: true)
   end
 
   def self.cleanup(run = false, options = {})
-    lhm_tables = connection.select_values("show tables").select { |name| name =~ /^lhm(a|n)_/ }
+    only_triggers = options.fetch(:only_triggers, false)
+    lhm_tables = only_triggers ? [] : connection.select_values("show tables").select { |name| name =~ /^lhm(a|n)_/ }
     if options[:until]
       lhm_tables.select!{ |table|
         table_date_time = Time.strptime(table, "lhma_%Y_%m_%d_%H_%M_%S")
