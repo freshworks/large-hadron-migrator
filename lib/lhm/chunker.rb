@@ -16,8 +16,8 @@ module Lhm
     def initialize(migration, connection = nil, options = {})
       @migration = migration
       @connection = connection
-      @stride = options[:stride] || 40_000
-      @throttle = options[:throttle] || 100
+      @stride = 1
+      @throttle = 60000 * 5
       @start = options[:start] || select_start
       @limit = options[:limit] || select_limit
       @batch_mode = options.fetch(:batch_mode, true)
