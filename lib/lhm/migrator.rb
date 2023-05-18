@@ -165,7 +165,6 @@ module Lhm
 
     def destination_create
       @connection.destination_create(@origin)
-      copy_triggers_to_destination_table
     end
 
     def destination_read
