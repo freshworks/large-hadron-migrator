@@ -44,11 +44,32 @@ module Lhm
     origin = Table.parse(table_name, connection)
     invoker = Invoker.new(origin, connection)
     block.call(invoker.migrator)
-    invoker.run(options)
-
+    migration = invoker.run(options)
     true
   ensure
+    archive_table_name = nil
+    archive_table_name = migration.archive_name unless migration.nil?
+    copy_triggers_to_original_table(origin, archive_table_name, connection)
     Lhm.cleanup(true, table_name: table_name, only_triggers: true)
+  end
+
+  def self.copy_triggers_to_original_table(origin, archive_name, connection)
+    return unless archive_name.present? && connection.table_exists?(archive_name)
+
+    origin.triggers.each do |trigger|
+      trigger_name = trigger[0]
+      trigger_definition = fetch_trigger_definition(trigger_name, connection)
+      next unless trigger_definition.include? archive_name
+
+      modified_definition = trigger_definition.gsub(archive_name, origin.name)
+      connection.execute("DROP TRIGGER #{trigger_name};")
+      connection.execute(modified_definition)
+    end
+  end
+
+  def self.fetch_trigger_definition(trigger_name, connection)
+    result = connection.execute("SHOW CREATE TRIGGER #{trigger_name};").first
+    result[2]
   end
 
   def self.cleanup(run = false, options = {})

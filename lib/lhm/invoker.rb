@@ -44,6 +44,7 @@ module Lhm
           LockedSwitcher.new(migration, @connection).run
         end
       end
+      migration
     end
   end
 end
