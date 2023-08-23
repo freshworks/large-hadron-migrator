@@ -69,7 +69,7 @@ module Lhm
 
   def self.fetch_trigger_definition(trigger_name, connection)
     result = connection.execute("SHOW CREATE TRIGGER #{trigger_name};").first
-    result[2]
+    result && result.length > 2 ? result[2] : ''
   end
 
   def self.cleanup(run = false, options = {})
