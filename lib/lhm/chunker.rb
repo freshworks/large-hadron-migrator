@@ -55,7 +55,7 @@ module Lhm
 
     def select_start
       start = connection.select_value("select min(#{origin_primary_key}) from #{ origin_name }")
-      start ? start.to_i : nil
+      start ? start.to_i : 0
     end
 
     def select_limit
