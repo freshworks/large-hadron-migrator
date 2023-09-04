@@ -45,7 +45,7 @@ module Lhm
     invoker = Invoker.new(origin, connection)
     block.call(invoker.migrator)
     invoker.run(options)
-    
+
     true
   ensure
     Lhm.cleanup(true, table_name: table_name, only_triggers: true)
