@@ -124,6 +124,10 @@ module IntegrationHelper
     connection.table_exists?(table.name)
   end
 
+  def trigger_exists?(table_name, trigger_name)
+    connection.trigger_exists?(table_name, trigger_name)
+  end
+
   #
   # Database Helpers
   #

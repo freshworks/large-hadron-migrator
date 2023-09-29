@@ -29,6 +29,23 @@ describe Lhm do
       end
     end
 
+    it "should retain triggers while migration" do
+      table_name = 'users'
+      trigger_name = 'timestamp_trigger'
+      query = "CREATE TRIGGER #{trigger_name} BEFORE INSERT ON #{table_name} FOR EACH ROW
+             BEGIN
+              SET NEW.created_at = NOW();
+             END;"
+      execute query
+      Lhm.change_table(table_name.to_sym, :atomic_switch => false, :cleanup => true) do |t|
+        t.add_column(:logins, "INT(12) DEFAULT '0'")
+      end
+
+      slave do
+        trigger_exists?(table_name, trigger_name).must_equal true
+      end
+    end
+
     it "should copy all rows" do
       23.times { |n| execute("insert into users set reference = '#{ n }'") }
 
