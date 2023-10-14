@@ -58,6 +58,7 @@ describe Lhm do
     it "should retain triggers while migration if retain_triggers_without_lock is not passed in the options" do
       table_name = 'users'
       trigger_name = 'timestamp_trigger'
+      check_and_create_trigger_on_users_table
       Lhm.change_table(table_name.to_sym, :atomic_switch => false, :cleanup => true) do |t|
         t.add_column(:logins_2, "INT(12) DEFAULT '0'")
       end
