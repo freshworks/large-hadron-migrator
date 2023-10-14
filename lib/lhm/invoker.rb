@@ -46,7 +46,7 @@ module Lhm
           LockedSwitcher.new(migration, @connection).run
         end
       end
-      TriggerSwitcher.new(@origin, migration.archive_name, @connection).copy_triggers
+      TriggerSwitcher.new(@origin, migration.archive_name, @connection).copy_triggers if options[:retain_triggers_without_lock]
     end
   end
 end
