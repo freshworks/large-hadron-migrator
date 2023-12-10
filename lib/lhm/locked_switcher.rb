@@ -4,6 +4,7 @@
 require 'lhm/command'
 require 'lhm/migration'
 require 'lhm/sql_helper'
+require 'lhm/trigger_switcher'
 
 module Lhm
   # Switches origin with destination table nonatomically using a locked write.
@@ -22,11 +23,12 @@ module Lhm
 
     attr_reader :connection
 
-    def initialize(migration, connection = nil)
+    def initialize(migration, connection = nil, retain_triggers = nil)
       @migration = migration
       @connection = connection
       @origin = migration.origin
       @destination = migration.destination
+      @retain_triggers = retain_triggers
     end
 
     def statements
@@ -34,13 +36,24 @@ module Lhm
     end
 
     def switch
-      [
+      queries = [
         "lock table `#{ @origin.name }` write, `#{ @destination.name }` write",
         "alter table `#{ @origin.name }` rename `#{ @migration.archive_name }`",
         "alter table `#{ @destination.name }` rename `#{ @origin.name }`",
         "commit",
         "unlock tables"
       ]
+      if @retain_triggers
+        trigger_copy_queries = []
+        trigger_copy_queries << "lock table `#{ @migration.archive_name }` write, `#{ @origin.name }` write"
+        @origin.triggers.each do |trigger|
+          trigger_name = trigger[0]
+          trigger_copy_queries << "DROP TRIGGER #{trigger_name};"
+          trigger_copy_queries << TriggerSwitcher.new.fetch_trigger_definition(trigger_name, connection)
+        end
+        queries.insert(3, *trigger_copy_queries) if trigger_copy_queries.length > 0 # inserting at index 4 as to insert the query before the commit query
+      end
+      queries
     end
 
     def uncommitted(&block)

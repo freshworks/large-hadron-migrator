@@ -29,11 +29,11 @@ describe Lhm do
       end
     end
 
-    it "should retain triggers while migration if retain_triggers_without_lock is set to true" do
+    it "should retain triggers while migration if retain_triggers is set to true in atomic switch" do
       table_name = 'users'
       trigger_name = 'timestamp_trigger'
       check_and_create_trigger_on_users_table
-      Lhm.change_table(table_name.to_sym, :atomic_switch => true, :cleanup => true, :retain_triggers_without_lock => true) do |t|
+      Lhm.change_table(table_name.to_sym, :atomic_switch => true, :cleanup => true, :retain_triggers => true) do |t|
         t.add_column(:logins, "INT(12) DEFAULT '0'")
       end
 
@@ -42,11 +42,24 @@ describe Lhm do
       end
     end
 
-    it "should not retain triggers while migration if retain_triggers_without_lock is set to false" do
+    it "should retain triggers while migration if retain_triggers is set to true in locked switch" do
       table_name = 'users'
       trigger_name = 'timestamp_trigger'
       check_and_create_trigger_on_users_table
-      Lhm.change_table(table_name.to_sym, :atomic_switch => false, :cleanup => true, :retain_triggers_without_lock => false) do |t|
+      Lhm.change_table(table_name.to_sym, :atomic_switch => false, :cleanup => true, :retain_triggers => true) do |t|
+        t.add_column(:logins, "INT(12) DEFAULT '0'")
+      end
+
+      slave do
+        trigger_exists?(table_name, trigger_name).must_equal true
+      end
+    end
+
+    it "should not retain triggers while migration if retain_triggers is set to false" do
+      table_name = 'users'
+      trigger_name = 'timestamp_trigger'
+      check_and_create_trigger_on_users_table
+      Lhm.change_table(table_name.to_sym, :atomic_switch => false, :cleanup => true, :retain_triggers => false) do |t|
         t.add_column(:logins_1, "INT(12) DEFAULT '0'")
       end
 
@@ -55,7 +68,7 @@ describe Lhm do
       end
     end
 
-    it "should retain triggers while migration if retain_triggers_without_lock is not passed in the options" do
+    it "should not retain triggers while migration if retain_triggers is not passed in the options" do
       table_name = 'users'
       trigger_name = 'timestamp_trigger'
       check_and_create_trigger_on_users_table
