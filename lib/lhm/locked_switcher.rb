@@ -23,7 +23,7 @@ module Lhm
 
     attr_reader :connection
 
-    def initialize(migration, connection = nil, retain_triggers = nil)
+    def initialize(migration, connection = nil, retain_triggers = false)
       @migration = migration
       @connection = connection
       @origin = migration.origin
@@ -51,7 +51,8 @@ module Lhm
           trigger_copy_queries << "DROP TRIGGER #{trigger_name};"
           trigger_copy_queries << TriggerSwitcher.new.fetch_trigger_definition(trigger_name, connection)
         end
-        queries.insert(3, *trigger_copy_queries) if trigger_copy_queries.length > 0 # inserting at index 4 as to insert the query before the commit query
+        target_index = queries.index('commit')
+        queries.insert(target_index, *trigger_copy_queries) if trigger_copy_queries.length > 0 # inserting the trigger queries before commit query
       end
       queries
     end
