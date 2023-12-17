@@ -11,7 +11,7 @@ module Lhm
         next unless trigger_definition.include? destination_table_name
 
         old_trigger_name = trigger_name
-        trigger_name = parse_trigger_name(trigger_name)
+        trigger_name = remove_timestamp_from_trigger_name_if_exists(trigger_name)
         modified_trigger_name = trigger_name + '_' + Time.now.getutc.to_s.gsub(/[:\- ]/, '_')
         modified_definition = trigger_definition.gsub(destination_table_name, source_table.name)
         modified_definition = modified_definition.gsub(old_trigger_name, modified_trigger_name)
@@ -27,7 +27,7 @@ module Lhm
       result && result.length > 2 ? result[2] : ''
     end
 
-    def parse_trigger_name(trigger_name)
+    def remove_timestamp_from_trigger_name_if_exists(trigger_name)
       timestamp_suffix_regex = /_(\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}_UTC)\z/
       match_data = trigger_name.match(/^(.*?)(?:#{timestamp_suffix_regex})$/)
       match_data ? match_data[1] : trigger_name
