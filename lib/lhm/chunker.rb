@@ -55,12 +55,12 @@ module Lhm
 
     def select_start
       start = connection.select_value("select min(#{origin_primary_key}) from #{ origin_name }")
-      start ? start.to_i : nil
+      start ? start.to_i : 1
     end
 
     def select_limit
       limit = connection.select_value("select max(#{origin_primary_key}) from #{ origin_name }")
-      limit ? limit.to_i : nil
+      limit ? limit.to_i : 1
     end
 
     def throttle_seconds

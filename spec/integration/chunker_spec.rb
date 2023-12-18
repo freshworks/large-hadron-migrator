@@ -47,4 +47,33 @@ describe Lhm::Chunker do
       end
     end
   end
+
+  describe "when table has 0 rows" do
+    it "should add an index" do
+      execute("delete from batch_origin")
+      count_all(:batch_origin).must_equal(0)
+      index_present = index_on_columns?(:batch_origin, [:id, :origin])
+      index_present.must_equal(false)
+
+      Lhm.change_table(:batch_origin, :atomic_switch => false) do |t|
+        t.add_index([:id, :origin])
+      end
+
+      index_present = index_on_columns?(:batch_origin, [:id, :origin])
+      index_present.must_equal(true)
+    end
+
+    it "should add a column" do
+      execute("delete from batch_origin")
+      count_all(:batch_origin).must_equal(0)
+      column_present = table_read(:batch_origin).columns.keys.include?('sub_batch_id')
+      column_present.must_equal(false)
+
+      Lhm.change_table(:batch_origin, :atomic_switch => false) do |t|
+        t.add_column :sub_batch_id, "TINYINT(4)"
+      end
+
+      table_read(:batch_origin).columns.keys.must_include('sub_batch_id')
+    end
+  end
 end
