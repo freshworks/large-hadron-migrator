@@ -12,7 +12,7 @@ module Lhm
 
         old_trigger_name = trigger_name
         trigger_name = remove_timestamp_from_trigger_name_if_exists(trigger_name)
-        modified_trigger_name = trigger_name + '_' + Time.now.getutc.to_s.gsub(/[:\- ]/, '_')
+        modified_trigger_name = trigger_name + '_' + Time.now.getutc.to_s.gsub(/[:\- ]/, '_') #sample trigger name - trigger_name_2023_12_18_03_40_45_UTC
         modified_definition = trigger_definition.gsub(destination_table_name, source_table.name)
         modified_definition = modified_definition.gsub(old_trigger_name, modified_trigger_name)
         connection.execute(modified_definition)

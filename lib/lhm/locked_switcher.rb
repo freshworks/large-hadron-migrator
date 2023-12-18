@@ -53,7 +53,6 @@ module Lhm
         end
         target_index = queries.index('commit')
         queries.insert(target_index, *trigger_copy_queries) if trigger_copy_queries.length > 0 # inserting the trigger queries before commit query
-        p "queries - #{queries}"
       end
       queries
     end
