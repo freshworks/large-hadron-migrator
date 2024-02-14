@@ -6,6 +6,7 @@ require 'lhm/entangler'
 require 'lhm/atomic_switcher'
 require 'lhm/locked_switcher'
 require 'lhm/migrator'
+require 'lhm/trigger_switcher'
 
 module Lhm
   # Copies an origin table to an altered destination table. Live activity is
@@ -16,9 +17,10 @@ module Lhm
   class Invoker
     include SqlHelper
 
-    attr_reader :migrator, :connection
+    attr_reader :migrator, :connection, :origin
 
     def initialize(origin, connection)
+      @origin = origin
       @connection = connection
       @migrator = Migrator.new(origin, connection)
     end
@@ -40,8 +42,9 @@ module Lhm
         Chunker.new(migration, @connection, options).run
         if options[:atomic_switch]
           AtomicSwitcher.new(migration, @connection).run
+          TriggerSwitcher.new.copy_triggers(@origin, migration.archive_name, @connection) if options[:retain_triggers]
         else
-          LockedSwitcher.new(migration, @connection).run
+          LockedSwitcher.new(migration, @connection, options[:retain_triggers]).run
         end
       end
     end

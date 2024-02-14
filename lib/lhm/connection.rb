@@ -142,6 +142,15 @@ module Lhm
       def table_exists?(table_name)
         @adapter.table_exists?(table_name)
       end
+
+      def trigger_exists?(table_name, trigger_name)
+        !!select_one(%Q{
+          select trigger_name
+            from information_schema.triggers
+           where event_object_table='#{table_name}'
+             and trigger_name like '#{trigger_name}'
+        })
+      end
     end
   end
 end
