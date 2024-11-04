@@ -148,7 +148,7 @@ module Lhm
           select trigger_name
             from information_schema.triggers
            where event_object_table='#{table_name}'
-             and trigger_name like '#{trigger_name}'
+             and trigger_name like '#{trigger_name}%'
         })
       end
     end
