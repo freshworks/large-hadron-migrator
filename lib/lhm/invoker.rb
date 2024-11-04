@@ -42,9 +42,9 @@ module Lhm
         Chunker.new(migration, @connection, options).run
         if options[:atomic_switch]
           AtomicSwitcher.new(migration, @connection).run
-          TriggerSwitcher.new.copy_triggers(@origin, migration.archive_name, @connection) if options[:retain_triggers]
+          TriggerSwitcher.new.copy_triggers(@origin, migration.archive_name, @connection) unless @origin.triggers.count.zero?
         else
-          LockedSwitcher.new(migration, @connection, options[:retain_triggers]).run
+          LockedSwitcher.new(migration, @connection).run
         end
       end
     end
