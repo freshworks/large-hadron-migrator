@@ -23,11 +23,12 @@ module Lhm
 
     attr_reader :connection
 
-    def initialize(migration, connection = nil)
+    def initialize(migration, connection = nil, retain_triggers = true)
       @migration = migration
       @connection = connection
       @origin = migration.origin
       @destination = migration.destination
+      @retain_triggers = retain_triggers
     end
 
     def statements
@@ -42,7 +43,7 @@ module Lhm
         "commit",
         "unlock tables"
       ]
-      unless @origin.triggers.count.zero?
+      if @retain_triggers
         trigger_copy_queries = []
         trigger_copy_queries << "lock table `#{ @migration.archive_name }` write, `#{ @origin.name }` write"
         @origin.triggers.each do |trigger|

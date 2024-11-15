@@ -10,6 +10,62 @@ describe Lhm do
 
   before(:each) { connect_master! }
 
+  describe 'retain triggers' do
+    before(:each) do
+      slave do
+        table_create(:users)
+      end
+    end
+
+    it 'should retain triggers while migration if retain_triggers is set to true in atomic switch' do
+      slave do
+        table_name = 'users'
+        trigger_name = 'timestamp_trigger'
+        check_and_create_trigger_on_users_table
+        Lhm.change_table(table_name.to_sym, :atomic_switch => true, :cleanup => true, :retain_triggers => true) do |t|
+          t.add_column(:logins, "INT(12) DEFAULT '0'")
+        end
+        trigger_exists?(table_name, trigger_name).must_equal true
+      end
+    end
+
+    it 'should retain triggers while migration if retain_triggers is set to true in locked switch' do
+      slave do
+        table_name = 'users'
+        trigger_name = 'timestamp_trigger'
+        check_and_create_trigger_on_users_table
+        Lhm.change_table(table_name.to_sym, :atomic_switch => false, :cleanup => true, :retain_triggers => true) do |t|
+          t.add_column(:logins, "INT(12) DEFAULT '0'")
+        end
+        trigger_exists?(table_name, trigger_name).must_equal true
+      end
+    end
+
+    it 'should not retain triggers while migration if retain_triggers is set to false' do
+      slave do
+        table_name = 'users'
+        trigger_name = 'timestamp_trigger'
+        check_and_create_trigger_on_users_table
+        Lhm.change_table(table_name.to_sym, :atomic_switch => false, :cleanup => true, :retain_triggers => false) do |t|
+          t.add_column(:logins_1, "INT(12) DEFAULT '0'")
+        end
+        trigger_exists?(table_name, trigger_name).must_equal false
+      end
+    end
+
+    it 'should retain triggers while migration if retain_triggers is not passed in the options' do
+      slave do
+        table_name = 'users'
+        trigger_name = 'timestamp_trigger'
+        check_and_create_trigger_on_users_table
+        Lhm.change_table(table_name.to_sym, :atomic_switch => false, :cleanup => true) do |t|
+          t.add_column(:logins_2, "INT(12) DEFAULT '0'")
+        end
+        trigger_exists?(table_name, trigger_name).must_equal true
+      end
+    end
+  end
+
   describe "changes" do
     before(:each) do
       table_create(:users)
@@ -26,32 +82,6 @@ describe Lhm do
           :is_nullable => "YES",
           :column_default => '0'
         })
-      end
-    end
-
-    it "should retain triggers while migration in atomic switch" do
-      table_name = 'users'
-      trigger_name = 'timestamp_trigger'
-      check_and_create_trigger_on_users_table
-      Lhm.change_table(table_name.to_sym, :atomic_switch => true, :cleanup => true) do |t|
-        t.add_column(:logins, "INT(12) DEFAULT '0'")
-      end
-
-      slave do
-        trigger_exists?(table_name, trigger_name).must_equal true
-      end
-    end
-
-    it "should retain triggers while migration in locked switch" do
-      table_name = 'users'
-      trigger_name = 'timestamp_trigger'
-      check_and_create_trigger_on_users_table
-      Lhm.change_table(table_name.to_sym, :atomic_switch => false, :cleanup => true) do |t|
-        t.add_column(:logins, "INT(12) DEFAULT '0'")
-      end
-
-      slave do
-        trigger_exists?(table_name, trigger_name).must_equal true
       end
     end
 
