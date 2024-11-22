@@ -13,6 +13,7 @@ describe Lhm do
   describe 'retain triggers' do
     before(:each) do
       slave do
+        Lhm.cleanup(:true)
         table_create(:users)
       end
     end

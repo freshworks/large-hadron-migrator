@@ -131,7 +131,7 @@ module IntegrationHelper
   def check_and_create_trigger_on_users_table
     table_name = 'users'
     trigger_name = 'timestamp_trigger'
-    execute "DROP TRIGGER #{trigger_name}" if connection.trigger_exists_in_db?(trigger_name)
+    execute "DROP TRIGGER #{trigger_name}" if trigger_exists?(table_name, trigger_name)
 
     query = "CREATE TRIGGER #{trigger_name} BEFORE INSERT ON #{table_name} FOR EACH ROW
            BEGIN

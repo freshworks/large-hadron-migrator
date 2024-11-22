@@ -151,14 +151,6 @@ module Lhm
              and trigger_name like '#{trigger_name}%'
         })
       end
-
-      def trigger_exists_in_db?(trigger_name)
-        !!select_one(%Q{
-          select trigger_name
-            from information_schema.triggers
-           where trigger_name like '#{trigger_name}%'
-        })
-      end
     end
   end
 end
