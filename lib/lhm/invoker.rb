@@ -38,13 +38,14 @@ module Lhm
 
       migration = @migrator.run
 
+      retain_triggers = options.fetch(:retain_triggers, true)
       Entangler.new(migration, @connection).run do
         Chunker.new(migration, @connection, options).run
         if options[:atomic_switch]
           AtomicSwitcher.new(migration, @connection).run
-          TriggerSwitcher.new.copy_triggers(@origin, migration.archive_name, @connection) if options[:retain_triggers]
+          TriggerSwitcher.new.copy_triggers(@origin, migration.archive_name, @connection) if retain_triggers
         else
-          LockedSwitcher.new(migration, @connection, options[:retain_triggers]).run
+          LockedSwitcher.new(migration, @connection, retain_triggers).run
         end
       end
     end

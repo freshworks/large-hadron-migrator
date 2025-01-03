@@ -23,7 +23,7 @@ module Lhm
 
     attr_reader :connection
 
-    def initialize(migration, connection = nil, retain_triggers = false)
+    def initialize(migration, connection = nil, retain_triggers = true)
       @migration = migration
       @connection = connection
       @origin = migration.origin
