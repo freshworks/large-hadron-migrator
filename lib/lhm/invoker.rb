@@ -39,6 +39,7 @@ module Lhm
       migration = @migrator.run
 
       retain_triggers = options.fetch(:retain_triggers, true)
+      puts "retain_triggers - #{retain_triggers}"
       Entangler.new(migration, @connection).run do
         Chunker.new(migration, @connection, options).run
         if options[:atomic_switch]

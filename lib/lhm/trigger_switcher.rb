@@ -29,13 +29,11 @@ module Lhm
       trigger_definition = result && result.length > 2 ? result[2] : ''
 
       # Replace definer if LHM_CHANGE_TRIGGER_DEFINER environment variable is set
-      puts "ENV['LHM_CHANGE_TRIGGER_DEFINER'] - #{ENV['LHM_CHANGE_TRIGGER_DEFINER']}"
       trigger_definition = update_trigger_definer(trigger_definition) if ENV['LHM_CHANGE_TRIGGER_DEFINER'] && !trigger_definition.empty?
       trigger_definition
     end
 
     def update_trigger_definer(trigger_definition)
-      puts "update_trigger_definer called"
       definer_user = ENV['LHM_TRIGGER_DEFINER'] || DEFAULT_TRIGGER_DEFINER
       # Match DEFINER=`user`@`host` pattern and replace with specified definer user@localhost
       trigger_definition.gsub(/DEFINER=`[^`]+`@`[^`]+`/, "DEFINER=`#{definer_user}`@`localhost`")
