@@ -29,7 +29,7 @@ module Lhm
       trigger_definition = result && result.length > 2 ? result[2] : ''
 
       # Replace definer if LHM_CHANGE_TRIGGER_DEFINER environment variable is set
-      trigger_definition = update_trigger_definer(trigger_definition) if ENV['LHM_CHANGE_TRIGGER_DEFINER'] && !trigger_definition.empty?
+      trigger_definition = update_trigger_definer(trigger_definition) if ENV['LHM_TRIGGER_DEFINER'] && !trigger_definition.empty?
       trigger_definition
     end
 
