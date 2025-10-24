@@ -1,7 +1,5 @@
 module Lhm
   class TriggerSwitcher
-    DEFAULT_TRIGGER_DEFINER = 'migration'.freeze
-
     def copy_triggers(source_table, destination_table_name, connection)
       return unless !destination_table_name.empty? && connection.table_exists?(destination_table_name)
 
@@ -34,9 +32,8 @@ module Lhm
     end
 
     def update_trigger_definer(trigger_definition)
-      definer_user = ENV['LHM_TRIGGER_DEFINER'] || DEFAULT_TRIGGER_DEFINER
-      # Match DEFINER=`user`@`host` pattern and replace with specified definer user@localhost
-      trigger_definition.gsub(/DEFINER=`[^`]+`@`[^`]+`/, "DEFINER=`#{definer_user}`@`localhost`")
+      # Match DEFINER=`user`@ pattern and replace only the user part, keeping the original host
+      trigger_definition.gsub(/DEFINER=`[^`]+`@/, "DEFINER=`#{ENV['LHM_TRIGGER_DEFINER']}`@")
     end
 
     def remove_timestamp_from_trigger_name_if_exists(trigger_name)
