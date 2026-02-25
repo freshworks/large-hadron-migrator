@@ -51,8 +51,28 @@ module Lhm
     Lhm.cleanup(true, table_name: table_name, only_triggers: true)
   end
 
+  # Cleans up LHM temporary tables and triggers
+  #
+  # @param [Boolean] run Actually perform the cleanup (default: false, dry run)
+  # @param [Hash] options Optional options to control cleanup behavior
+  # @option options [Boolean] :only_triggers
+  #   Only cleanup triggers, not tables (default: false)
+  # @option options [String, Symbol] :table_name
+  #   Only cleanup artifacts for this specific table
+  # @option options [Time] :until
+  #   Only cleanup tables created before this time
+  # @option options [Boolean] :batch_delete
+  #   Delete rows in batches before dropping to avoid replica lag (default: false)
+  # @option options [Fixnum] :stride
+  #   Number of rows to delete per batch when batch_delete is true (default: 10,000)
+  # @option options [Fixnum] :throttle
+  #   Milliseconds to sleep between batches when batch_delete is true (default: 100)
   def self.cleanup(run = false, options = {})
     only_triggers = options.fetch(:only_triggers, false)
+    batch_delete = options.fetch(:batch_delete, false)
+    stride = options.fetch(:stride, 10_000)
+    throttle = options.fetch(:throttle, 100)
+
     lhm_tables = only_triggers ? [] : connection.select_values("show tables").select { |name| name =~ /^lhm(a|n)_/ }
     if options[:until]
       lhm_tables.select!{ |table|
@@ -81,6 +101,9 @@ module Lhm
         connection.execute("drop trigger if exists #{trigger}")
       end
       lhm_tables.each do |table|
+        if batch_delete
+          chunked_delete(table, stride, throttle)
+        end
         connection.execute("drop table if exists #{table}")
       end
       true
@@ -91,9 +114,33 @@ module Lhm
       puts "Existing LHM backup tables: #{lhm_tables.join(", ")}."
       puts "Existing LHM triggers: #{lhm_triggers.join(", ")}."
       puts "Run Lhm.cleanup(true) to drop them all."
+      puts "Run Lhm.cleanup(true, batch_delete: true) to delete in batches first (recommended for large tables)."
       false
     end
   end
+
+  # Deletes rows from a table in chunks to avoid replica lag
+  #
+  # @param [String] table_name Name of the table to delete from
+  # @param [Fixnum] stride Number of rows to delete per batch
+  # @param [Fixnum] throttle Milliseconds to sleep between batches
+  def self.chunked_delete(table_name, stride, throttle)
+    puts "Batch deleting from #{table_name} (stride: #{stride}, throttle: #{throttle}ms)..."
+    throttle_seconds = throttle / 1000.0
+    total_deleted = 0
+
+    loop do
+      deleted = connection.execute("DELETE FROM `#{table_name}` LIMIT #{stride}").affected_rows
+      break if deleted == 0
+
+      total_deleted += deleted
+      print "."
+      sleep(throttle_seconds)
+    end
+
+    puts "\nDeleted #{total_deleted} rows from #{table_name}"
+  end
+  private_class_method :chunked_delete
 
   def self.setup(adapter)
     @@adapter = adapter

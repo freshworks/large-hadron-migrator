@@ -59,4 +59,51 @@ describe Lhm do
     end
 
   end
+
+  describe "cleanup with batch_delete" do
+    it "should delete lhmn table in batches when batch_delete is true" do
+      table_create(:lhmn_table, true)
+      table_name = 'users'
+
+      # Insert some test data
+      @connection.execute("INSERT INTO lhmn_users (id) VALUES (1), (2), (3), (4), (5)")
+
+      Lhm.cleanup(true, table_name: table_name, batch_delete: true, stride: 2, throttle: 10)
+
+      lhm_tables = @connection.select_values("show tables").select { |name| name =~ /^lhmn_/ && name.ends_with?(table_name) }
+      lhm_tables.must_equal([])
+    end
+
+    it "should delete lhma table in batches when batch_delete is true" do
+      table_create(:lhma_table, true)
+      table_name = '10_users'
+
+      Lhm.cleanup(true, table_name: table_name, batch_delete: true, stride: 1000, throttle: 50)
+
+      lhm_tables = @connection.select_values("show tables").select { |name| name =~ /^lhma_/ && name.ends_with?(table_name) }
+      lhm_tables.must_equal([])
+    end
+
+    it "should use default stride and throttle when not provided" do
+      table_create(:lhmn_table, true)
+      table_name = 'users'
+
+      # Should not raise error with default values
+      Lhm.cleanup(true, table_name: table_name, batch_delete: true)
+
+      lhm_tables = @connection.select_values("show tables").select { |name| name =~ /^lhmn_/ && name.ends_with?(table_name) }
+      lhm_tables.must_equal([])
+    end
+
+    it "should still work without batch_delete option (backward compatibility)" do
+      table_create(:lhmn_table, true)
+      table_name = 'users'
+
+      # Original API should still work
+      Lhm.cleanup(true, table_name: table_name)
+
+      lhm_tables = @connection.select_values("show tables").select { |name| name =~ /^lhmn_/ && name.ends_with?(table_name) }
+      lhm_tables.must_equal([])
+    end
+  end
 end
