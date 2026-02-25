@@ -1,3 +1,11 @@
+# 1.3.0 (February 4, 2026)
+
+* Added batch-wise cleanup option to reduce replica lag on large tables
+  - New option `batch_delete: true` for `Lhm.cleanup()`
+  - Configurable `stride` (rows per batch) and `throttle` (ms between batches)
+  - Deletes archive table rows in chunks before DROP to avoid replica lag spikes
+  - Backward compatible: existing `Lhm.cleanup(true)` behavior unchanged
+
 # 1.2.0 (January 30, 2013)
 
 * Added DataMapper support, no API changes for current users. Refer to the

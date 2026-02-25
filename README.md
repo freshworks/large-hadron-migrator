@@ -133,6 +133,42 @@ end
 **Note:** Lhm won't delete the old, leftover table. This is on purpose, in order
 to prevent accidental data loss.
 
+## Cleanup
+
+After migrations, LHM leaves behind archive tables (prefixed with `lhma_` or `lhmn_`).
+You can clean these up using:
+
+```ruby
+# Basic cleanup - uses DROP TABLE (fast but may cause replica lag on large tables)
+Lhm.cleanup(true)
+
+# Dry run - shows what would be cleaned up
+Lhm.cleanup(false)
+```
+
+### Batch-wise Cleanup (Recommended for Large Tables)
+
+For tables with millions of rows, instant `DROP TABLE` can cause significant replica lag.
+Use batch-wise deletion to spread the load:
+
+```ruby
+# Delete rows in batches before dropping (reduces replica lag)
+Lhm.cleanup(true, batch_delete: true)
+
+# With custom stride and throttle
+Lhm.cleanup(true, batch_delete: true, stride: 10_000, throttle: 100)
+
+# Cleanup specific table only
+Lhm.cleanup(true, table_name: :users, batch_delete: true)
+```
+
+**Options:**
+- `batch_delete`: Enable batch-wise deletion before DROP (default: `false`)
+- `stride`: Number of rows to delete per batch (default: `10,000`)
+- `throttle`: Milliseconds to sleep between batches (default: `100`)
+- `table_name`: Only cleanup artifacts for a specific table
+- `only_triggers`: Only cleanup triggers, not tables
+
 ## Table rename strategies
 
 There are two different table rename strategies available: LockedSwitcher and
